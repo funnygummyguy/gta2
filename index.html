@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Car Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/controls/OrbitControls.js';
+
+// Scene
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa0a0a0);
+
+// Camera
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 5, 10);
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Controls (for testing)
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Light
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10, 20, 10);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+
+// Ground
+const groundGeometry = new THREE.PlaneGeometry(200, 200);
+const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+// Car (box)
+const carGeometry = new THREE.BoxGeometry(1, 1, 2);
+const carMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+const car = new THREE.Mesh(carGeometry, carMaterial);
+car.position.y = 0.5;
+scene.add(car);
+
+// Car movement
+let moveForward = false;
+let moveBackward = false;
+let turnLeft = false;
+let turnRight = false;
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'ArrowUp') moveForward = true;
+  if (e.code === 'ArrowDown') moveBackward = true;
+  if (e.code === 'ArrowLeft') turnLeft = true;
+  if (e.code === 'ArrowRight') turnRight = true;
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'ArrowUp') moveForward = false;
+  if (e.code === 'ArrowDown') moveBackward = false;
+  if (e.code === 'ArrowLeft') turnLeft = false;
+  if (e.code === 'ArrowRight') turnRight = false;
+});
+
+// Animation loop
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  
+  const delta = clock.getDelta();
+  const speed = 5;
+  const turnSpeed = 2;
+
+  // Move car
+  if (moveForward) {
+    car.position.x -= Math.sin(car.rotation.y) * speed * delta;
+    car.position.z -= Math.cos(car.rotation.y) * speed * delta;
+  }
+  if (moveBackward) {
+    car.position.x += Math.sin(car.rotation.y) * speed * delta;
+    car.position.z += Math.cos(car.rotation.y) * speed * delta;
+  }
+  if (turnLeft) car.rotation.y += turnSpeed * delta;
+  if (turnRight) car.rotation.y -= turnSpeed * delta;
+
+  // Camera follows car
+  camera.position.x = car.position.x + 5 * Math.sin(car.rotation.y);
+  camera.position.z = car.position.z + 5 * Math.cos(car.rotation.y);
+  camera.position.y = car.position.y + 3;
+  camera.lookAt(car.position);
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
